@@ -1,0 +1,10 @@
+.Expenses {
+    text-align: left;
+    min-height: 100vh;
+}
+
+input[type=radio] {
+    border: 0;
+    width: 2em;
+    height: 2em;
+}
