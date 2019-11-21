@@ -4,4 +4,10 @@ export interface Expense {
     description: string
     author: string
     message: string
+    category?: string
+}
+
+export interface Category {
+    name: string
+    words: string[]
 }

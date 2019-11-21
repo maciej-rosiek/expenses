@@ -5,6 +5,7 @@ import {Expenses} from "./Expenses";
 import {useEffect, useState} from "react";
 import * as React from "react";
 import {Expense} from "./model";
+import {categorize} from "./categories";
 
 function hasNumber(str: string) {
     return /\d/.test(str);
@@ -100,7 +101,7 @@ function App() {
                 </div>
                 }
                 {expenses && (
-                    <div>
+                    <div style={{width: "100%"}}>
                         <div className="App-clear-button-container">
                             <button className="App-clear-button"
                                     onClick={() => {
@@ -111,7 +112,7 @@ function App() {
                             </button>
                         </div>
                         <hr/>
-                        <Expenses expenses={expenses}/>
+                        <Expenses expenses={expenses.map(categorize)}/>
                     </div>)}
             </header>
         </div>

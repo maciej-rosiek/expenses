@@ -2,20 +2,9 @@ import {useState} from 'react';
 import './Expenses.css';
 import * as React from "react";
 import {Expense} from "./model";
-
-function formatDate(date: Date): string {
-    let d = date,
-        month = '' + (d.getMonth() + 1),
-        day = '' + d.getDate(),
-        year = d.getFullYear();
-
-    if (month.length < 2)
-        month = '0' + month;
-    if (day.length < 2)
-        day = '0' + day;
-
-    return [year, month, day].join('-');
-}
+import {categories} from "./categories";
+import ReactTooltip from "react-tooltip";
+import {ExpensesByDay} from "./ExpensesByDay";
 
 function daysDifference(date1: Date, date2: Date) {
     const timeDiff = date2.getTime() - date1.getTime();
@@ -30,6 +19,7 @@ function getCalendarWeek(date: Date) {
 
 export const Expenses = ({expenses}: {expenses: Expense[]}) => {
     const [daysFilter, setDaysFilter] = useState(localStorage.getItem('days-filter') || '30-days');
+    const [selectedCategory, setSelectedCategory] = useState();
 
     const filteredExpenses = expenses.filter(expense => {
         if (daysFilter === '30-days') {
@@ -53,20 +43,28 @@ export const Expenses = ({expenses}: {expenses: Expense[]}) => {
         personSum[expense.author] = (personSum[expense.author] || 0) + expense.amount;
     });
 
-    const expensesByDay: {day: string, expenses: Expense[]}[] = [];
-
-    let previousDay: string | null = null;
-
+    const categoryExpenses: {[category: string]: {amount: number, expenses: Expense[]}} = {};
     filteredExpenses.forEach(expense => {
-        const day = formatDate(expense.date);
-
-        if (previousDay == null || day !== previousDay) {
-            previousDay = day;
-            expensesByDay.push({day, expenses: []});
+        const category = expense.category;
+        if (category) {
+            let entry = categoryExpenses[category];
+            if (entry) {
+                entry.amount = entry.amount + expense.amount;
+                entry.expenses.push(expense);
+                categoryExpenses[category] = entry;
+            } else {
+                categoryExpenses[category] = {amount: expense.amount, expenses: [expense]};
+            }
         }
-
-        expensesByDay[expensesByDay.length - 1].expenses.push(expense);
     });
+
+    const onSelectCategoryExpenses = (category: string) => {
+        if (selectedCategory === category) {
+            setSelectedCategory(undefined);
+        } else {
+            setSelectedCategory(category);
+        }
+    };
 
     return (
         <div className="Expenses">
@@ -120,28 +118,39 @@ export const Expenses = ({expenses}: {expenses: Expense[]}) => {
 
             <hr/>
 
-            <div>Sum: {sum.toFixed(2)}€</div>
-
-            {Object.keys(personSum).map(person => (
-                <div key={person}>{person}: {personSum[person].toFixed(2)}€</div>
-            ))}
+            <table style={{width: "100%", borderSpacing: 0}}>
+                <tbody>
+                    <tr>
+                        <td style={{width: "60%", padding: 0, verticalAlign: "top"}}>Sum</td>
+                        <td style={{width: "40%", padding: 0, verticalAlign: "top", textAlign: "right"}}>{sum.toFixed(2)} €</td>
+                    </tr>
+                    {Object.keys(personSum).map(person => (
+                        <tr key={person}>
+                            <td style={{width: "60%", padding: 0, verticalAlign: "top"}}>{person}</td>
+                            <td style={{width: "40%", padding: 0, verticalAlign: "top", textAlign: "right"}}>{personSum[person].toFixed(2)} €</td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
 
             <hr/>
 
-            {expensesByDay.map(({day, expenses}) => (
-                <div key={day} style={{marginBottom: 16}}>
-                    <div style={{fontSize: "calc(10px + 1vmin)", marginBottom: 4}}>{day}</div>
-                    <table style={{width: "100%", borderSpacing: 0}}>
-                        {expenses.map((expense, index) =>
-                            <tr key={index} title={expense.message}>
-                                <td style={{width: "30%", padding: 0, verticalAlign: "top"}}>{expense.author}</td>
-                                <td style={{width: "20%", padding: 0, verticalAlign: "top"}}>{expense.amount}</td>
-                                <td style={{width: "50%", padding: 0, verticalAlign: "top"}}>{expense.description}</td>
-                            </tr>
-                        )}
-                    </table>
-                </div>
-            ))}
+            <table style={{width: "100%", borderSpacing: 0}}>
+                <tbody>
+                    {categories.map(category => (
+                        <tr key={category.name}>
+                            <td style={{width: "60%", padding: 0, verticalAlign: "top"}} data-for="expenses" data-tip={category.words.join(", ")}>{category.name}</td>
+                            <td style={{width: "40%", padding: 0, verticalAlign: "top", textAlign: "right", color: category.name === selectedCategory ? 'lightblue': undefined}} onClick={() => onSelectCategoryExpenses(category.name)}>{(categoryExpenses[category.name] ? categoryExpenses[category.name].amount : 0).toFixed(2)} €</td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+
+            <hr />
+
+            <ExpensesByDay expenses={selectedCategory ? (categoryExpenses[selectedCategory] ? categoryExpenses[selectedCategory].expenses : []) : filteredExpenses} />
+
+            <ReactTooltip id="expenses" />
         </div>
     );
 };
