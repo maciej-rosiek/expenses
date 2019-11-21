@@ -101,7 +101,7 @@ function App() {
                 </div>
                 }
                 {expenses && (
-                    <div style={{width: "100%"}}>
+                    <div style={{width: "100%", maxWidth: 800}}>
                         <div className="App-clear-button-container">
                             <button className="App-clear-button"
                                     onClick={() => {
