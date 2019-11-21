@@ -1,19 +1,21 @@
-import React, {useEffect, useState} from 'react';
 import './App.css';
 import {useDropzone} from 'react-dropzone';
 import * as WhatsApp from 'whatsapp-chat-parser';
 import {Expenses} from "./Expenses";
+import {useEffect, useState} from "react";
+import * as React from "react";
+import {Expense} from "./model";
 
-function hasNumber(str) {
+function hasNumber(str: string) {
     return /\d/.test(str);
 }
 
-function readFileAsync(file) {
+function readFileAsync(file: File): Promise<string> {
     return new Promise((resolve, reject) => {
         let reader = new FileReader();
 
         reader.onload = () => {
-            resolve(reader.result);
+            resolve(reader.result as string);
         };
 
         reader.onerror = reject;
@@ -22,34 +24,31 @@ function readFileAsync(file) {
     })
 }
 
-function sortByDate(a, b) {
-    return b.date - a.date;
+function sortByDate(a: Expense, b: Expense) {
+    return b.date.getTime() - a.date.getTime();
 }
 
 const numbersRegex = /(^(\d|\.|,)+)(.*)/i;
 
-const fluffMessages = [
-    '115 euro!'
-];
-
 function App() {
-    const [expenses, setExpenses] = useState(undefined);
+    const [expenses, setExpenses] = useState<Expense[] | undefined>(undefined);
 
-    const onMessages = async contents => {
+    const onMessages = async (contents: string): Promise<Expense[]> => {
         const messages = await WhatsApp.parseString(contents);
         console.log("Got messages", messages);
 
-        return messages.map(message => {
-            message.amount = parseFloat(message.message.replace(numbersRegex, '$1').replace(",", "."));
-            message.description = message.message.replace(numbersRegex, '$3').trim();
-            return message;
-        }).filter(message =>
-            message.message &&
-            message.message.trim() !== '' &&
-            hasNumber(message.message) &&
-            message.author !== 'System' &&
-            message.amount &&
-            !fluffMessages.find(m => m.indexOf(message.message) >= 0)
+        return messages.map<Expense>(message => {
+            return {
+                ...message,
+                amount: parseFloat(message.message.replace(numbersRegex, '$1').replace(",", ".")),
+                description: message.message.replace(numbersRegex, '$3').trim()
+            }
+        }).filter(expense =>
+            expense.message &&
+            expense.message.trim() !== '' &&
+            hasNumber(expense.message) &&
+            expense.author !== 'System' &&
+            expense.amount
         );
     };
 
@@ -58,11 +57,10 @@ function App() {
         if (previousExpensesString) {
             (async () => {
                 try {
-                    let previousExpenses = JSON.parse(previousExpensesString);
-                    previousExpenses = previousExpenses.map(e => ({
+                    let previousExpenses = (JSON.parse(previousExpensesString) as any[]).map(e => ({
                         ...e,
                         date: new Date(e.date)
-                    }));
+                    })) as Expense[];
                     setExpenses(previousExpenses);
                 } catch (e) {
                     console.log("Could not load previous expenses", e);
@@ -73,12 +71,12 @@ function App() {
         // eslint-disable-next-line
     }, []);
 
-    const onDrop = async files => {
+    const onDrop = async (files: File[]) => {
         setExpenses(undefined);
-        const allExpenses = (await Promise.all(files.map(async file => {
+        const allExpenses = flatMap((await Promise.all(files.map(async file => {
             const contents = await readFileAsync(file);
-            return await onMessages(contents);
-        }))).flat().sort(sortByDate);
+            return onMessages(contents);
+        })))).sort(sortByDate);
 
         console.log("Got expenses: ", allExpenses);
 
@@ -118,6 +116,10 @@ function App() {
             </header>
         </div>
     );
+}
+
+export function flatMap<T>(array: T[][]): T[] {
+    return Array.prototype.concat(...array);
 }
 
 export default App;

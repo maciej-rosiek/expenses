@@ -1,8 +1,10 @@
-import React, {useState} from 'react';
+import {useState} from 'react';
 import './Expenses.css';
+import * as React from "react";
+import {Expense} from "./model";
 
-function formatDate(date) {
-    let d = new Date(date),
+function formatDate(date: Date): string {
+    let d = date,
         month = '' + (d.getMonth() + 1),
         day = '' + d.getDate(),
         year = d.getFullYear();
@@ -15,40 +17,55 @@ function formatDate(date) {
     return [year, month, day].join('-');
 }
 
-function daysDifference(date1, date2) {
+function daysDifference(date1: Date, date2: Date) {
     const timeDiff = date2.getTime() - date1.getTime();
-    return  timeDiff / (1000 * 3600 * 24);
+    return timeDiff / (1000 * 3600 * 24);
 }
 
-function getCalendarWeek(date) {
-    const onejan = new Date(date.getFullYear(), 0, 1);
-    const millisecsInDay = 86400000;
-    return Math.ceil((((date - onejan) /millisecsInDay) + onejan.getDay()+1)/7);
+function getCalendarWeek(date: Date) {
+    const oneJan = new Date(date.getFullYear(), 0, 1);
+    const msInDay = 86400000;
+    return Math.ceil((((date.getTime() - oneJan.getTime()) / msInDay) + oneJan.getDay() + 1) / 7);
 }
 
-export const Expenses = ({expenses}) => {
+export const Expenses = ({expenses}: {expenses: Expense[]}) => {
     const [daysFilter, setDaysFilter] = useState(localStorage.getItem('days-filter') || '30-days');
 
     const filteredExpenses = expenses.filter(expense => {
-       if (daysFilter === '30-days') {
-           return daysDifference(expense.date, new Date()) <= 30;
-       } else if (daysFilter === '7-days') {
-           return daysDifference(expense.date, new Date()) <= 7;
-       }  else if (daysFilter === 'current-week') {
-           return getCalendarWeek(expense.date) === getCalendarWeek(new Date());
-       } else if (daysFilter === 'current-month') {
-           return expense.date.getMonth() === new Date().getMonth() && expense.date.getMonth() === new Date().getMonth();
-       } else {
-           return true;
-       }
+        if (daysFilter === '30-days') {
+            return daysDifference(expense.date, new Date()) <= 30;
+        } else if (daysFilter === '7-days') {
+            return daysDifference(expense.date, new Date()) <= 7;
+        } else if (daysFilter === 'current-week') {
+            return getCalendarWeek(expense.date) === getCalendarWeek(new Date());
+        } else if (daysFilter === 'current-month') {
+            return expense.date.getMonth() === new Date().getMonth() && expense.date.getMonth() === new Date().getMonth();
+        } else {
+            return true;
+        }
     });
 
     let sum = 0;
-    const personSum = {};
+    const personSum: {[author: string]: number} = {};
 
     filteredExpenses.forEach(expense => {
         sum += expense.amount;
         personSum[expense.author] = (personSum[expense.author] || 0) + expense.amount;
+    });
+
+    const expensesByDay: {day: string, expenses: Expense[]}[] = [];
+
+    let previousDay: string | null = null;
+
+    filteredExpenses.forEach(expense => {
+        const day = formatDate(expense.date);
+
+        if (previousDay == null || day !== previousDay) {
+            previousDay = day;
+            expensesByDay.push({day, expenses: []});
+        }
+
+        expensesByDay[expensesByDay.length - 1].expenses.push(expense);
     });
 
     return (
@@ -101,7 +118,7 @@ export const Expenses = ({expenses}) => {
                 </div>
             </form>
 
-            <hr />
+            <hr/>
 
             <div>Sum: {sum.toFixed(2)}€</div>
 
@@ -109,13 +126,22 @@ export const Expenses = ({expenses}) => {
                 <div key={person}>{person}: {personSum[person].toFixed(2)}€</div>
             ))}
 
-            <hr />
+            <hr/>
 
-            {filteredExpenses.map((expense, index) =>
-                <div key={index} title={expense.message}>
-                    {formatDate(expense.date)} | {expense.author} | {expense.amount}€ | {expense.description}
+            {expensesByDay.map(({day, expenses}) => (
+                <div key={day} style={{marginBottom: 16}}>
+                    <div style={{fontSize: "calc(10px + 1vmin)", marginBottom: 4}}>{day}</div>
+                    <table style={{width: "100%", borderSpacing: 0}}>
+                        {expenses.map((expense, index) =>
+                            <tr key={index} title={expense.message}>
+                                <td style={{width: "30%", padding: 0, verticalAlign: "top"}}>{expense.author}</td>
+                                <td style={{width: "20%", padding: 0, verticalAlign: "top"}}>{expense.amount}</td>
+                                <td style={{width: "50%", padding: 0, verticalAlign: "top"}}>{expense.description}</td>
+                            </tr>
+                        )}
+                    </table>
                 </div>
-            )}
+            ))}
         </div>
     );
 };
