@@ -2,16 +2,16 @@ import {Category, Expense} from "./model";
 
 export const categories: Category[] = [{
     name: "Jedzenie",
-    words: ["rewe", "lidl", "obiad", "batonik", "gumy", "netto", "milky", "dm", "kaufland", "pizza", "woda", "apteka", "chleb"]
+    words: ["rewe", "lidl", "obiad", "batonik", "gumy", "netto", "milky", "dm", "kaufland", "pizza", "woda", "apteka", "chleb", "rossman", "jedzenie", "precelki", "mikołaj", "płaszcz", "anytbiotyk"]
 }, {
     name: "Ubrania",
-    words: ["zalando", "rękawiczki", "zara", "ubrania"]
+    words: ["zalando", "rękawiczki", "zara", "ubrania", "buty"]
 }, {
     name: "Komunikacja",
-    words: ["paliwo", "bilety", "bvg", "bilet"]
+    words: ["paliwo", "bilety", "bvg", "bilet", "parking", "myjnia"]
 }, {
     name: "Hobby",
-    words: ["flamastry", "basteln", "basen", "prezent", "lego", "wyjście", "papierniczy"]
+    words: ["flamastry", "basteln", "basen", "prezent", "lego", "wyjście", "papierniczy", "gry", "tyrolka", "elektronika"]
 }, {
     name: "Inne",
     words: ["edyta", "licencja"]
